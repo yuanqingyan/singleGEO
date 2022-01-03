@@ -1,0 +1,425 @@
+---
+title: "SingleGEO: Query and Integrative Analysis of High-throughput Single Cell Sequencing Data from GEO"
+author: "Author: Yuanqing Yan <bioinformatics.yuanqing@gmail.com>"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{SingleGEO: Query and Integrative Analysis of Single Cell High-throughput Sequencing Data from GEO}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Description
+Single cell next generation sequencing technologies have advanced the research to examine the genomic alterations from individual cells. Single cell Assay for Transposase Accessible Chromatin with high-throughput sequencing (scATAC-seq) enables the research of chromatin-accessibility signatures across the entire genome. Single cell RNAseq (scRNAseq) studies the single-cell transcriptomics to better understand the differential cell compositions as wells as the molecular profile changes. Currently a huge amount of single cell genetic data have been deposited in GEO and the number is keeping on exponentially increasing. These single cell high-throughput sequencing data come from different tissues, health status, disease stage and drug treatments. Various machine learning algorithms, such as canonical correlation analysis and reciprocal principal component analysis, have been adapted in single cell data analysis. The implementation of such algorithms correct the potential batch effects and make the data integration between different datasets feasible. SingleGEO is developed to efficiently query, download high-throughput single cell sequencing data from GEO and perform and integrative analysis. The program will initially download GEO meta database into local drive and implement a fast and light-weight searching engine to query the database. By feeding the program with the keywords relevant to the user's research interests, the query results with specific meta information will be returned for further investigation. Once the targeted GSE IDs have been selected, the single cell sequencing data deposited in GEO supplement can be downloaded into local derive. In addition, singleGEO provides pipelines to easily generate Seurat objects from raw/normalized data and perform an integrative analysis with multiple datasets using Seurat framework. Novel findings can be obtained through the integrative analysis from different datasets. 
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE, 
+  message = FALSE,
+  comment = "#>",
+  fig.width=6, 
+  fig.height=6,
+  fig.align = "center",
+  echo=TRUE
+)
+```
+## Installation
+Installing singleGEO from GitHub
+```{r, eval=FALSE}
+library(devtools)
+install_github("yuanqingyan/singleGEO")
+```
+
+## Download GEO meta database
+SingleGEO uses sql to query the database. To perform the database searching, GEO meta database should be first downloaded and save in the local drive. The name of the geo meta dataset usually is GEOmetadb.sqlite. If the meta database has been already downloaded and not the in the current working folder, specify the path of this file. In this vignett, a demo file is used for demonstration purpose.    
+```{r,eval=TRUE}
+library(singleGEO)
+##Download the GEO meta database. Remove "Demo=TRUE" or set "Demo=FALSE" when you start your own project.
+MyDataBase<-GetGeoMetaDatabase(Sqlfile=NULL,Demo=TRUE)
+```
+
+## Query the database
+To query the database, the organisms and a list of keywords should be provided. For the organism, one or multiple organisms can be provided. By providing a list of keywords, the query will return the results with the keywords described in GEO meta data. One or multiple keywords can be provided. For each keyword, to overcome the ambiguity, multiple options can be provided. For example, "pulmonary" could be an alternative word used for lung study. The program will searching the database by recognizing the different options for each key point. The following code is to search the potential available GEO datasets, assuming we are interested in scRNAseq data in lung study from both human and mouse. 
+```{r,eval=TRUE}
+# Will study mouse and human data
+MyOrganism<-c("Mus musculus","Homo sapiens")
+# Will study lung. Some study may use "pulmonary" instead of "lung", so two options are specified
+search_kw1<-c("lung","pulmonary")
+KeyList<-list(kw1=search_kw1)
+MySearch<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                           Organism=MyOrganism, 
+                           InputSearchList=KeyList)
+colnames(MySearch)
+unique(MySearch$gse)
+```
+```{r,eval=FALSE}
+head(MySearch[,c("title","gse")])
+```
+```{r,eval=TRUE,echo=FALSE}
+head(MySearch[,c("title","gse")])
+```
+
+```{r,eval=FALSE}
+MySearch[MySearch$gse=="GSE158127","summary"][1]
+```
+```{r,eval=TRUE,echo=F}
+MySearch[MySearch$gse=="GSE158127","summary"][1]
+```
+
+SingleGEO can query scRNAseq and scATACseq datasets simultaneously. The following code searches the datasets which are from either scRANseq or scATACseq and relevant to human adenocarcinoma disease.
+```{r,eval=TRUE}
+Organism_hs<-c("Homo sapiens")
+Data_platform<-c("scRNAseq","scATACseq")
+search_kw_ade<-c("adenocarcinoma")
+KeyList_ade<-list(kw_ad=search_kw_ade)
+MySearch_ade<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                               Organism=Organism_hs,
+                               InputSearchList=KeyList_ade,
+                               Platform=Data_platform)
+unique(MySearch_ade$gse)
+```
+
+Title of one scATACseq study
+```{r,eval=FALSE}
+MySearch_ade[MySearch_ade$gse=="GSE142285","title"][1]
+```
+```{r,eval=TRUE,echo=F}
+MySearch_ade[MySearch_ade$gse=="GSE142285","title"][1]
+```
+
+For some studies, a combination of both scRNAseq and scATACseq are performed. SingleGEO can identify such datasets by intersecting the query results. The following code is to search for mouse brain study with both scRNAseq and scATACseq.
+```{r,eval=TRUE}
+MyOrganism_ms<-c("Mus musculus")
+search_brain<-c("brain")
+KeyList_brain<-list(kw_brain=search_brain)
+
+MySearch_brain_scRNA<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                                       Organism=MyOrganism_ms,
+                                       InputSearchList=KeyList_brain,
+                                       Platform="scRNAseq")
+MySearch_brain_scATAC<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                                        Organism=MyOrganism_ms,
+                                        InputSearchList=KeyList_brain,
+                                        Platform="scATACseq")
+(Both_RNA_ATAC<-intersect(unique(MySearch_brain_scRNA$gse),
+                          unique(MySearch_brain_scATAC$gse)))
+```
+```{r,eval=FALSE}
+MySearch_brain_scRNA[MySearch_brain_scRNA$gse==Both_RNA_ATAC[1],"overall_design"][1]
+```
+```{r,eval=TRUE,echo=F}
+MySearch_brain_scRNA[MySearch_brain_scRNA$gse==Both_RNA_ATAC[1],"overall_design"][1]
+```
+
+To obtain more specific studies, multiple keywords should be provided. The following codes can be used to query scRNAseq datasets in mouse, and such datasets should focus on lung fibrosis and new or novel subtype of cell population should be reported.
+
+```{r,eval=TRUE}
+search_kw2<-c("fibrosis")
+search_kw3<-c("new","novel")
+search_kw4<-c("subtype","subpopulation")
+KeyList_new<-list(kw1=search_kw1,
+                  kw2=search_kw2,
+                  kw3=search_kw3,
+                  kw4=search_kw4)
+MySearch_new<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                               Organism=MyOrganism_ms,
+                               InputSearchList=KeyList_new)
+unique(MySearch_new$gse)
+```
+
+Title of this gse dataset
+```{r,eval=FALSE}
+MySearch_new[1,"title"]
+```
+```{r,eval=TRUE,echo=F}
+MySearch_new[1,"title"]
+```
+
+Summary of this study
+```{r,eval=FALSE}
+MySearch_new$summary[1]
+```
+```{r,eval=TRUE,echo=F}
+MySearch_new$summary[1]
+```
+
+Design of this study
+```{r,eval=FALSE
+MySearch_new$overall_design[1]
+```
+```{r,eval=TRUE,echo=F}
+MySearch_new$overall_design[1]
+```
+We can also obtain the gsm information of each study. 
+```{r,eval=TRUE,echo=T}
+gsm_info<-Get_GSMFromGSE(GeoDataBase=MyDataBase,
+                         GSE.ID=MySearch_new$gse[1])
+colnames(gsm_info)
+```
+
+Gsm title and id
+```{r,eval=FALSE}
+gsm_info[,c("title","gsm")]
+```
+```{r,eval=TRUE,echo=F}
+gsm_info[,c("title","gsm")]
+```
+
+SingleGEO can be used to query different datasets for integrative analysis. Suppose we are also doing a fas-signaling project in lung fibrosis (fas-signaling has been reported to be up-regulated in lung epithelial cells from patients with idiopathic pulmonary fibrosis) and wondering whether there are some scRNAseq datasets available in mouse. If we could find some, we would like to integrate them with the previous searching result (novel cell type in mouse lung fibrosis) and evaluate whether fas-signaling pathway affect the novel cell type (this example will be described in data integration part).
+
+```{r,eval=TRUE}
+search_kw5<-c("fas-signaling","fas signaling","fas pathway","fas-pathway")
+KeyList_fas<-list(kw1=search_kw1,
+                  kw2=search_kw2,
+                  kw5=search_kw5)
+MySearch_fas<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                               Organism=MyOrganism_ms,
+                               InputSearchList=KeyList_fas)
+unique(MySearch_fas$gse)
+```
+
+Title of this study
+```{r,eval=FALSE}
+MySearch_fas[1,"title"]
+```
+```{r,eval=TRUE,echo=F}
+MySearch_fas[1,"title"]
+```
+
+Design of this study
+```{r,eval=FALSE
+MySearch_fas$overall_design[1]
+```
+```{r,eval=TRUE,echo=F}
+MySearch_fas$overall_design[1]
+```
+
+Summary of this study
+```{r,eval=FALSE}
+MySearch_fas$summary[1]
+```
+```{r,eval=TRUE,echo=F}
+MySearch_fas$summary[1]
+```
+
+Available supplement data
+```{r,eval=FALSE}
+MySearch_fas$supplementary_file[1]
+```
+```{r,eval=TRUE,echo=F}
+MySearch_fas$supplementary_file[1]
+```
+
+## Use singleGEO to download the single cell high-throughput sequencing data
+By providing the GSE IDs, the single cell high-throughput sequencing data deposited in the supplement will be downloaded for further analysis.
+```{r,eval=TRUE}
+myGeoID<-c("GSE140032")
+##Set DecompressFile=TRUE if you want to download and decompress the data in the same time
+DownloadFileInfo<-Get_Geo_Data(DownGSEID=myGeoID,DecompressFile=FALSE)
+DownloadFileInfo
+ExtractFile(ExtractID=myGeoID,DecompressType=c("tar","gz"))
+list.files("GSE140032")
+```
+Different groups have different preference in storing and uploading the data to GEO. If a Seurat object is provided by the submitter, the data can be read into Seurat directly for further analysis. For hdf5 format file, R packages of "rhdf5" and/or "SeuratDisk" could be helpful for data access. For the study with only raw count data and/or normalized data provided, SingleGEO provides "MakeSeuObj_FromRawRNAData" and "MakeSeuObj_FromNormalizedRNAData" to quickly make the Seurat object.
+
+## Make Seurat object from raw sequencing data
+SingleGEO can make the Seurat object from the raw data it downloaded by running "MakeSeuObj_FromRawRNAData". Before running "MakeSeuObj_FromRawRNAData", a list of raw data should be constructed. Each element of the list is for each individual sample and the name of the element corresponds to the name of the sample. "MakeSeuObj_FromRawRNAData" performs the scRNAseq data quality control by filtering out cells with potential doublets, dead cells or empty droplets. If all cells want to be kept or the cells have been filtered, set a big number of maxFeature,maxCount,maxMT and small number of minFeature,minCount. SingleGEO also conducts dimension reduction and makes the Seurat object for the downstream analysis.
+
+```{r,eval=TRUE}
+###The following code generate an example dataset from GSE134174 (The same data has been built and can be loaded by data(testData_GSE134174)). Note that only 4 samples with 800 cells were selected for illustration purpose.
+# Get_Geo_Data(DownGSEID="GSE134174",DecompressFile="TRUE",DecompressType="All")
+# selPatient<-c("T101","T85","T153","T164")
+# raw_GSE134174<-read.delim("./GSE134174/GSE134174_Processed_invivo_raw.txt",header=T,sep="\t")
+# meta_GSE134174<-read.delim("./GSE134174/GSE134174_Processed_invivo_metadata.txt",header=T,sep="\t")
+# meta_sel0<-meta_GSE134174[meta_GSE134174$Donor %in% selPatient,]
+# raw_sel0<-raw_GSE134174[,colnames(raw_GSE134174) %in% meta_sel0$Cell]
+# set.seed(12345);sampleIndex<-sample(1:nrow(meta_sel0),size=800)
+# meta_sel<-meta_sel0[sampleIndex,];raw_sel<-raw_sel0[,paste(meta_sel$Cell)]
+# raw_sel<-raw_sel[rowSums(raw_sel)>0,]
+# testData_GSE134174<-list(TwoRawData=raw_sel,TwoMetaData=meta_sel)
+
+data(testData_GSE134174)
+test_meta<-testData_GSE134174$TwoMetaData
+test_data<-testData_GSE134174$TwoRawData
+list_GSE134174<-Splitdata_MakeDataList(InputData=test_data,Group=test_meta$Donor)
+##The following code setting a big number of maxFeature,maxCount,maxMT and small number ##of minFeature,minCount will keep all the cells
+seu_GSE134174<-MakeSeuObj_FromRawRNAData(RawList=list_GSE134174,
+                                      GSE.ID="GSE134174",
+                                      MinFeature=1,
+                                      MaxFeature=750000,
+                                      MinCount=1,
+                                      MaxCount=4000000,
+                                      MaxMT=100)
+names(seu_GSE134174)
+Seurat::DimPlot(seu_GSE134174[[1]],repel = TRUE)
+####Use sctransform normalization and make Seurat object
+seu_GSE134174_sct<-MakeSeuObj_FromRawRNAData(RawList=list_GSE134174,
+                                          GSE.ID="GSE134174",
+                                          MinFeature=1,
+                                          MaxFeature=750000,
+                                          MinCount=1,
+                                          MaxCount=4000000,
+                                          MaxMT=100,
+                                          Norm.method = "sct")
+names(seu_GSE134174_sct)
+```
+
+## Make Seurat object from normalized data
+Normalized scRNAseq data could be available and may be the only dataset provided by the data submitter. SingleGEO can use normalized dataset to make the Seurat object. For the normalized data, assume the cells are in good quality and no further filtering is necessary.
+
+```{r,eval=TRUE}
+#####to make Seurat object from normalized by LogNormalized method
+#Norm_GSE134174<-lapply(seu_GSE134174,function(x) {Seurat::GetAssayData(x,slot = "data")})
+data(Norm_GSE134174)
+seu_Norm_GSE134174<-MakeSeuObj_FromNormalizedRNAData(NormList=Norm_GSE134174,GSE.ID="GSE134174")
+Seurat::DimPlot(seu_Norm_GSE134174[[1]],repel = TRUE)
+
+#####to make Seurat object from normalized by sctransform method
+list_Norm.sct_GSE134174<-lapply(seu_GSE134174_sct,function(x) Seurat::GetAssayData(x,slot="data"))
+seu_Norm.sct_GSE134174<-MakeSeuObj_FromNormalizedRNAData(NormList=list_Norm.sct_GSE134174,Frow.which.Norm="sct",GSE.ID="GSE134174")
+Seurat::DimPlot(seu_Norm.sct_GSE134174[[1]],repel = TRUE)
+
+```
+
+## Data integration
+Multiple datasets can be integrated for the analysis. These datasets could be obtained from one single GSE ID or multiple GSE IDs. The following examples illustrate the integrative analysis of example datasets from one single GSE ID (GSE134174).
+```{r,eval=TRUE}
+Int_GSE134174<-SeuObj_integration(Object.list=seu_GSE134174)
+###Add additional meta data
+row.names(test_meta)<-test_meta$Cell
+test_meta<-test_meta[row.names(Int_GSE134174@meta.data),]
+Int_GSE134174<-Seurat::AddMetaData(object=Int_GSE134174,metadata =as.data.frame(test_meta))
+Seurat::DimPlot(Int_GSE134174,group.by="cluster_ident",label=TRUE,repel = TRUE)+ NoLegend()
+
+#####Data integration with one single dataset normalized with sctransform method
+Int_GSE134174_sct<-SeuObj_integration(Object.list=seu_GSE134174_sct,Frow.which.Norm="sct")
+test_meta_sct<-test_meta[row.names(Int_GSE134174_sct@meta.data),]
+Int_GSE134174_sct<-Seurat::AddMetaData(object=Int_GSE134174_sct,metadata =as.data.frame(test_meta_sct))
+Seurat::DimPlot(Int_GSE134174_sct,group.by="cluster_ident",label=TRUE,repel = TRUE)+ NoLegend()
+```
+
+Integrative analysis of datasets from multiple GSE IDs could be powerful to gain additional information. As previous query result, GSE104154 dataset studies the mouse pulmonary fibrotic mesenchymal cells and the authors identify a new subtype of cells (Pdgfrb_hi) in fibrotic stage(Xie,T. (2018)). Another dataset, GSE161648, studies the impact of homeostatic fibrosis when the fas signaling was lost in fibroblasts(Redente, EF. (2020)). Integrative analysis of these two scRNAseq datasets can help us understand how the new subtype of cells found from GSE104154 will be affected by fas signaling.
+
+```{r,eval=TRUE,fig.height = 4, fig.width = 8, fig.align = "center"}
+# ##The codes were used to generate the example data list of GSE104154 (only a small subset of the data were used)
+#   myGeoList<-c("GSE104154", "GSE161648")
+#   myAllF<-Get_Geo_Data(DownGSEID=myGeoList,DecompressFile=TRUE,DecompressType="All")
+#   dat_104_raw<-read.csv("GSE104154/GSE104154_d0_d21_sma_tm_Expr_raw.csv")
+#   meta_104_2<-as.data.frame(readxl::read_xlsx("GSE104154/GSE104154_cell_type_annotation_d0_d21.xlsx",col_names=T,sheet=2))
+#   meta_104_3<-as.data.frame(readxl::read_xlsx("GSE104154/GSE104154_cell_type_annotation_d0_d21.xlsx",col_names=T,sheet=3))
+#   meta_104_2_3<-rbind(meta_104_2,meta_104_3)
+#   meta_104_2_3$ID<-sapply(strsplit(meta_104_2_3$Barcode,split="\\."),function(x) x[2])
+#   sleSize=300
+#   sampleInd<-unlist(lapply(unique(meta_104_2_3$ID),function(x) {temp<-meta_104_2_3[meta_104_2_3$ID %in% x,]
+#     set.seed(1234);sleSize<-min(nrow(temp),sleSize);SelectCellInd<-sample(1:nrow(temp),size=sleSize,replace=F)
+#     returnBarcode<-temp$Barcode[SelectCellInd]}))
+#   meta_23<-meta_104_2_3[meta_104_2_3$Barcode %in% sampleInd,]
+#   dat_104Raw_withAno<-dat_104_raw[,paste(meta_23$Barcode)]
+#   rowSum_dat104Raw<-rowSums(dat_104Raw_withAno)
+#   dat_104Raw_f<-dat_104Raw_withAno[rowSum_dat104Raw>0,]
+#   removeDupGene<-(!duplicated(dat_104_raw[rowSum_dat104Raw>0,2]))
+#   dat_104Raw_f2<-dat_104Raw_f[removeDupGene,]
+#   row.names(dat_104Raw_f2)<-dat_104_raw[rowSum_dat104Raw>0,2][removeDupGene]
+#   t_datRaw<-data.frame(barcode=sapply(strsplit(colnames(dat_104Raw_f2),split="\\."),function(x) x[2]),t(dat_104Raw_f2))
+#   t_datRaw$barcode<-dplyr::recode(t_datRaw$barcode,"1"="d0_sma.pos_tm.pos","2"="d0_sma.neg_tm.pos",
+#   "3"="d0_sma.neg_tm.neg", "4"="d21_sma.pos_tm.pos","5"="d21_sma.neg_tm.pos","6"="d21_sma.neg_tm.neg")
+#   RawDataList_GSE104154<-Splitdata_MakeDataList(InputData=t(t_datRaw[,2:ncol(t_datRaw)]),Group=t_datRaw$barcode)
+#   meta_GSE104154<-meta_23
+#
+# ##The codes were used to generate the example data list of GSE161648
+#   GEO_ID<-"GSE161648"
+#   list_barcodefile<-list.files(GEO_ID,pattern="*_barcodes.tsv.gz")
+#   (sampleName<-gsub("_barcodes.tsv.gz","",list_barcodefile))
+#   sapply(sampleName,function(x){
+#     NewSampleFolder<-sprintf("%s/%s",GEO_ID,x)
+#     if (!file.exists(NewSampleFolder)){dir.create(NewSampleFolder)}
+#     file.copy(sprintf("%s/%s_barcodes.tsv.gz",GEO_ID,x), sprintf("%s/barcodes.tsv.gz",NewSampleFolder))
+#     file.copy(sprintf("%s/%s_matrix.mtx.gz",GEO_ID,x), sprintf("%s/matrix.mtx.gz",NewSampleFolder))
+#     file.copy(sprintf("%s/%s_features.tsv.gz",GEO_ID,x), sprintf("%s/features.tsv.gz",NewSampleFolder))
+#   })
+#   GSE161648_10xRawData<-sapply(sampleName,function(x){rawdata<- Seurat::Read10X(data.dir =sprintf("%s/%s",GEO_ID,x))})
+#   sleSize1=500
+#   RawDataList_GSE161648<-lapply(GSE161648_10xRawData,function(x){sleSize1<-min(ncol(as.matrix(x)),sleSize1)
+#     set.seed(1234);SelectCellInd<-sample(1:ncol(as.matrix(x)),size=sleSize1,replace=F)
+#     returnCell<-(as.matrix(x))[,SelectCellInd]})
+
+  ##load the example data
+  data(Dat_GSE54_GSE48)
+  RawDataList_GSE104154<-Dat_GSE54_GSE48$dat_GSE104154$RawDataList
+  meta_GSE104154<-Dat_GSE54_GSE48$dat_GSE104154$MetaData
+  row.names(meta_GSE104154)<-meta_GSE104154$Barcode
+  RawDataList_GSE161648<-Dat_GSE54_GSE48$dat_GSE161648$RawDataList
+  ###make Seurat object fro the raw data
+  seu_GSE104154_raw<-MakeSeuObj_FromRawRNAData(RawList=RawDataList_GSE104154,
+                                               GSE.ID="GSE104154",
+                                               MtPattern='^mt-',
+                                               MinFeature=1,
+                                               MaxFeature=750000,
+                                               MinCount=1, 
+                                               MaxCount=4000000,
+                                               MaxMT=100)
+  seu_GSE161648_raw<-MakeSeuObj_FromRawRNAData(RawList=RawDataList_GSE161648,GSE.ID="GSE161648",MtPattern='^mt-')
+  ###Data integration
+  Int_GSE54_GSE48<-SeuObj_integration(Object.list=seu_GSE104154_raw,Object.list2=seu_GSE161648_raw)
+  
+  ###Evaluate the potential batch effect
+  Seurat::DimPlot(Int_GSE54_GSE48,group.by="orig.ident",split.by="GSE",repel = TRUE)
+  Seurat::DimPlot(Int_GSE54_GSE48,group.by="seurat_clusters",split.by="GSE",label=TRUE,repel = TRUE)+ NoLegend()
+  
+  ###Add annotation to GSE104154 as provided by the data submitter
+  Int_GSE54_GSE48$rowname<-row.names(Int_GSE54_GSE48@meta.data)
+  meta_subsetOfInt_GSE54<-subset(Int_GSE54_GSE48,GSE=="GSE104154")@meta.data
+  meta_subsetOfInt_GSE54$Barcode<-sapply(strsplit(meta_subsetOfInt_GSE54$rowname,split="\\_"),function(x) x[1])
+  ano_meta_subsetOfInt_GSE54<-dplyr::left_join(meta_subsetOfInt_GSE54,meta_GSE104154,by="Barcode")
+  row.names(ano_meta_subsetOfInt_GSE54)<-ano_meta_subsetOfInt_GSE54$rowname
+  ano_meta_subsetOfInt_GSE54<-ano_meta_subsetOfInt_GSE54[,c("rowname","defined")]
+  Int_GSE54_GSE48@meta.data<-dplyr::left_join(Int_GSE54_GSE48@meta.data,ano_meta_subsetOfInt_GSE54,by="rowname")
+  row.names(Int_GSE54_GSE48@meta.data)<-Int_GSE54_GSE48@meta.data$rowname
+  Int_GSE54_GSE48$defined<-ifelse(is.na(Int_GSE54_GSE48$defined),
+                                  paste(Int_GSE54_GSE48$seurat_clusters),Int_GSE54_GSE48$defined)
+
+  Seurat::DimPlot(Int_GSE54_GSE48,group.by="defined",split.by="GSE",label=TRUE,repel = TRUE)+ NoLegend()
+  ###Test whether loss Fas signaling will affect PDGFrb cell fraction in GSE161648 dataset
+  Subset_GSE161648FromInt<-subset(Int_GSE54_GSE48,GSE=="GSE161648")
+  Subset_GSE161648FromInt$FasStatus<-ifelse(Subset_GSE161648FromInt$ID %in% c("GSM4911963_sixwkfasdel","GSM4911965_threewkfasdel"),"Loss","NoLoss")
+  tab_dat<-as.matrix(as.data.frame(unclass(table(Subset_GSE161648FromInt@meta.data[,c("FasStatus","defined")]))))
+  ###PDGFrb is located in the cluster of 10. No obvious different is observed and loss of Fas signaling probably won't affect PDGFrb cell fraction.
+  (tab_pop<-prop.table(tab_dat, margin = 1))
+  dat_barplot<-data.frame(FasStatus=rep(c("Loss","NoLoss"),ncol(tab_pop)),
+                        defined=rep(colnames(tab_pop),each=2),
+                        Percentage=as.numeric(tab_pop))
+```
+```{r,eval=TRUE,fig.align = "center"}
+  ###Barplot. Note that PDGFrb is located in the cluster of 7.
+  pl<-ggplot2::ggplot(dat_barplot, aes(fill=defined, y=Percentage, x=FasStatus))+
+    geom_bar(position="stack", stat="identity") + 
+    theme_bw()
+  print(pl)
+```
+
+## Transferring learning
+Instead of the data integration by modifying the query expression data, transferring learning could be an alternative approach to study the multiple datasets from different GSE ids. The following example takes GSE104154 as the reference while GSE161648 as the query.
+```{r,eval=TRUE}
+   data(Data_Ref_transfer)
+   data(Data_Query_transfer)
+
+  Transfer_Result<-SeuObj_transfer(RefObj=Data_Ref_transfer,
+                                   QueryObj=Data_Query_transfer, 
+                                   RefLabel="defined")
+  Seurat::DimPlot(Transfer_Result, 
+                  group.by="predicted.RefLabel", 
+                  reduction = "umap",
+                  label=TRUE,
+                  repel = TRUE)+ NoLegend()
+```
+
+# Citations
+Xie T, Wang Y, Deng N, Huang G et al. Single-Cell Deconvolution of Fibroblast Heterogeneity in Mouse Pulmonary Fibrosis. Cell Rep 2018 Mar 27;22(13):3625-3640. PMID: 29590628
+
+Redente EF, Chakraborty S, Sajuthi S, Black BP et al. Loss of Fas signaling in fibroblasts impairs homeostatic fibrosis resolution and promotes persistent pulmonary fibrosis. JCI Insight 2020 Dec 8;6(1). PMID: 33290280
+
+# SessionInfo()
+
+```{r}
+sessionInfo()
+```
