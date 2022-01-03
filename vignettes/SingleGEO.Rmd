@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 Installing singleGEO from GitHub
 ```{r, eval=FALSE}
 library(devtools)
-install_github("yuanqingyan/singleGEO")
+devtools::install_github("yuanqingyan/singleGEO")
 ```
 
 ## Download GEO meta database

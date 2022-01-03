@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 
 ## ---- eval=FALSE--------------------------------------------------------------
 #  library(devtools)
-#  install_github("yuanqingyan/singleGEO")
+#  devtools::install_github("yuanqingyan/singleGEO")
 
 ## ----eval=TRUE----------------------------------------------------------------
 library(singleGEO)
