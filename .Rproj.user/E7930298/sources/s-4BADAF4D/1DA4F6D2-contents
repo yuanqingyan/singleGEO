@@ -1,0 +1,23 @@
+Package: singleGEO
+Type: Package
+Title: Query and Integrate Single Cell RNAseq Data from GEO
+Version: 0.1.0
+Date: 2021-11-29
+Author: Yuanqing Yan
+Maintainer: Yuanqing Yan <bioinformatics.yuanqing@gmail.com>
+Description: Query and download single cell RNAseq data from GEO, and perform an integrative analysis. 
+Dependeds: R(>=4.0.3),R.utils,RSQLite,Seurat,GEOmetadb,GEOquery,devtools,roxygens2,knitr
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+Imports:
+      Seurat,
+      R.utils,
+      RSQLite,
+      GEOmetadb,
+      GEOquery,
+      knitr
+RoxygenNote: 7.1.2
+VignetteBuilder: knitr
+Suggests: 
+    rmarkdown

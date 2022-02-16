@@ -1,0 +1,91 @@
+---
+title: "SingleGEO: Query and Integrative Analysis of Single Cell RNAseq Data from GEO"
+author: "Author: Yuanqing Yan <bioinformatics.yuanqing@gmail.com>"
+date: "December 1st, 2021"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+## Description
+Single cell RNAseq (scRNAseq) is a powerful platform to understand the differential cell composition as wells as the molecular profile changes by an individual cell level. Many scRNAseq data have been generated and deposited in GEO. These scRNAseq data come from different tissues, health status, disease stage and drug treatment. With the application of various machine learning algorithms in scRNAseq data analysis, such as data integration with multiple dataset or transfer learning between different dataset, it is feasible to analyze scRNAseq data from various resource and data from GEO are the precious repository for this investigation. SingleGEO is developed to query, download and perform integrative analysis scRNAseq data from GEO. By feeding the program with keywords, the query results will be return for the user to further investigation. The scRNAseq data in the GEO supplement can be downloaded into local drive, decomposed and ready for secondary analysis. Seurat object will be generated and integrative analysis can be performed.
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width=8, 
+  fig.height=7
+)
+```
+## Installation
+Installing singleGEO from GitHub
+```{r, eval=FALSE}
+library(devtools)
+install_github("yuanqingyan/singleGEO")
+```
+
+## Download GEO meta database
+SingleGEO uses sql to query the database. GEO meta database should be downloaded and save in the local drive. The name of the geo meta dabaset usually is GEOmetadb.sqlite. If the meta database has been already downloaded and not the in the current working folder, specify the path.  
+```{r,eval=TRUE}
+library(singleGEO)
+MyDataBase<-GetGeoMetaDatabase(sqlfile="/home/yyw9094/github/Rpackage/singleGEO/GEOmetadb.sqlite")
+```
+
+## Query the database
+The organisms to be search for should be provided. Multiple organisms can be provided. The key points to filter the data should be formed a list before feeding to the program. Multiple key points can be provided. For each key points, to overcome the ambiguous issue, multiple options can be provided. The program will searching the database by recognizing the different options for each key points.
+```{r,eval=TRUE}
+# want to study mouse and human data
+MyOrganism<-c("Mus musculus","Homo sapiens")
+# want to study lung. Some study may use "pulmonary" instead of "lung", so two options are specified  
+search_kw1<-c("lung","pulmonary")
+# want to study fibrosis disease
+search_kw2<-c("fibrosis")
+KeyList<-list(kw1=search_kw1,kw2=search_kw2)
+MySearch<-Get_Keyword_Meta(GeoDataBase=MyDataBase,Organism=MyOrganism, InputSearchList=KeyList)
+
+```
+
+## Download the scRNAseq data
+By providing the GSE ID, the scRNAseq data in the supplement will be downloaded. The data can also be decomposed for initial investigation.  
+```{r,eval=TRUE}
+myGeoList<-c("GSE86618")
+DownloadFileInfo<-Get_Geo_Data(DownGSEList=myGeoList,DecompressFile=FALSE)
+ExtractFile(ExtractList=myGeoList,DecompressType="gz")
+```
+
+## Make Seurat object from raw sequencing data
+Based on the research interest, all or some of the raw data downloaded can be used for secondary analysis. By forming a list containing the desired raw data, the program perform the data quality control by filtering out undesired cells, conduct dimension reduction and make the seurat object for the downstream analysis.
+
+```{r,eval=TRUE}
+data(testData_GSE134174)
+test_meta<-testData_GSE134174$TwoMetaData
+test_data<-testData_GSE134174$TwoRawData
+temp<-data.frame(Patient=as.factor(test_meta$Donor),t(test_data));head(temp[,1:5])
+list_GSE134174<-Splitdata_MakeDataList(InputData=temp,Group="Patient")
+seu_GSE134174<-MakeSeuObj_FromRawData(RawList=list_GSE134174,minFeature=1,maxFeature=750000,
+                                      minCount=1, maxCount=4000000,maxMT=100) ##setting big number of maxFeature,maxCount,maxMT and small number of minFeature,minCount will keep all the cells
+```
+
+## Make Seurat object from normalized data
+Normalized data can be available from the user or the data submitter. If so, it can be used directly by feeding to the program. Please note that different normalization method, such as scTransform and vst, can cause issue for the downstream analysis. 
+
+```{r,eval=TRUE}
+data(testNormData_GSE134174)
+meta_dat<-testNormData_GSE134174$TwoMetaData
+norm_dat<-testNormData_GSE134174$TwoNormData
+temp<-data.frame(Patient=as.factor(meta_dat$Donor),t(norm_dat))
+list_Norm_GSE134174<-Splitdata_MakeDataList(InputData=temp,Group="Patient")
+seu_Norm_GSE134174<-MakeSeuObj_FromNormalizedData(NormList=list_Norm_GSE134174)
+```
+
+## Data integration
+Multiple dataset can be integrated for the analysis.
+```{r,eval=TRUE}
+data(listDat_GSE134174)
+Int_GSE134174<-SeuObj_integration(object.list=listDat_GSE134174)
+```
+
+## Transfering learning
+Transfer learning to explor new feature
+

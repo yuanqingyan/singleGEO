@@ -33,14 +33,14 @@ Transfer reference data information onto query data.
 
 library(singleGEO)
 ###
-data(Example_TrData_SCT)
-Ref_transfer<-Example_TrData_SCT$RefObj
-Query_transfer<-Example_TrData_SCT$QueryObj
-Transfer_Result_sct2<-SeuObj_transfer(RefObj=Ref_transfer,
-                                      QueryObj=Query_transfer,
-                                      RefLabel="defined",
-                                      Norm.method = "sct")
-Seurat::DimPlot(Transfer_Result_sct2,
+
+data(Data_Ref_transfer)
+data(Data_Query_transfer)
+
+Transfer_Result<-SeuObj_transfer(RefObj=Data_Ref_transfer,
+                                QueryObj=Data_Query_transfer,
+                                 RefLabel="defined")
+Seurat::DimPlot(Transfer_Result,
                 group.by="predicted.RefLabel",
                 reduction = "umap",
                 label=TRUE,

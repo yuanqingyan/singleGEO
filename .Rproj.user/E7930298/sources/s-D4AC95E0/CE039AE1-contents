@@ -1,0 +1,53 @@
+## ---- include = FALSE---------------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width=8, 
+  fig.height=7
+)
+
+## ---- eval=FALSE--------------------------------------------------------------
+#  library(devtools)
+#  install_github("yuanqingyan/singleGEO")
+
+## ----eval=TRUE----------------------------------------------------------------
+library(singleGEO)
+MyDataBase<-GetGeoMetaDatabase(sqlfile="/home/yyw9094/github/Rpackage/singleGEO/GEOmetadb.sqlite")
+
+## ----eval=TRUE----------------------------------------------------------------
+# want to study mouse and human data
+MyOrganism<-c("Mus musculus","Homo sapiens")
+# want to study lung. Some study may use "pulmonary" instead of "lung", so two options are specified  
+search_kw1<-c("lung","pulmonary")
+# want to study fibrosis disease
+search_kw2<-c("fibrosis")
+KeyList<-list(kw1=search_kw1,kw2=search_kw2)
+MySearch<-Get_Keyword_Meta(GeoDataBase=MyDataBase,Organism=MyOrganism, InputSearchList=KeyList)
+
+
+## ----eval=TRUE----------------------------------------------------------------
+myGeoList<-c("GSE86618")
+DownloadFileInfo<-Get_Geo_Data(DownGSEList=myGeoList,DecompressFile=FALSE)
+ExtractFile(ExtractList=myGeoList,DecompressType="gz")
+
+## ----eval=TRUE----------------------------------------------------------------
+data(testData_GSE134174)
+test_meta<-testData_GSE134174$TwoMetaData
+test_data<-testData_GSE134174$TwoRawData
+temp<-data.frame(Patient=as.factor(test_meta$Donor),t(test_data));head(temp[,1:5])
+list_GSE134174<-Splitdata_MakeDataList(InputData=temp,Group="Patient")
+seu_GSE134174<-MakeSeuObj_FromRawData(RawList=list_GSE134174,minFeature=1,maxFeature=750000,
+                                      minCount=1, maxCount=4000000,maxMT=100) ##setting big number of maxFeature,maxCount,maxMT and small number of minFeature,minCount will keep all the cells
+
+## ----eval=TRUE----------------------------------------------------------------
+data(testNormData_GSE134174)
+meta_dat<-testNormData_GSE134174$TwoMetaData
+norm_dat<-testNormData_GSE134174$TwoNormData
+temp<-data.frame(Patient=as.factor(meta_dat$Donor),t(norm_dat))
+list_Norm_GSE134174<-Splitdata_MakeDataList(InputData=temp,Group="Patient")
+seu_Norm_GSE134174<-MakeSeuObj_FromNormalizedData(NormList=list_Norm_GSE134174)
+
+## ----eval=TRUE----------------------------------------------------------------
+data(listDat_GSE134174)
+Int_GSE134174<-SeuObj_integration(object.list=listDat_GSE134174)
+
