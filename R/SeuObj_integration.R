@@ -14,6 +14,7 @@
 #' @param Do.center Whether to center the data or not. Binary data. This will feed to ScaleData function. Default: TRUE
 #' @param Dims.anchor The number of top dimensions for the IntegrateData function. Default: 1:50
 #' @param Dims.umap The number of top dimensions of reduction to use for the functions of FindNeighbors and RunUMAP. Default: 1:30
+#' @param K.weight Number of neighbors to consider when weighting anchors in "IntegrateData" function. Default: 100
 #' @param Resolution The resolution value for FindClusters function. Default: 0.8
 #' @param Algorithm The algorithm to be used in FindClusters. Default: 1
 #' @param Future.globals.maxSize Maximum allowed total size of global variables. Default: 12000*1024^2 (12Gb)
@@ -46,6 +47,7 @@ SeuObj_integration<-function(Object.list = object.list,
                              Anchor.reduction = 'rpca',
                              Dims.anchor=1:50,
                              Dims.umap=1:30,
+                             K.weight = 100,
                              Resolution=0.8,
                              Algorithm=1,
                              Future.globals.maxSize = 12000*1024^2){
@@ -102,6 +104,7 @@ SeuObj_integration<-function(Object.list = object.list,
                                               verbose = FALSE)
     seu_int <- Seurat::IntegrateData(anchorset = anchors,
                                      dims = Dims.anchor,
+                                     k.weight = K.weight,
                                      normalization.method ="LogNormalize",
                                      verbose = FALSE)
 
@@ -114,7 +117,7 @@ SeuObj_integration<-function(Object.list = object.list,
   }else if(Frow.which.Norm %in% c("sct","sctransform","SCT","Sctransform","Sct")){
     sct.list <- Seurat::PrepSCTIntegration(object.list =object.list.all, anchor.features = features)
     sct.anchors <- Seurat::FindIntegrationAnchors(object.list = sct.list,reference =ReferenceIndex, normalization.method = "SCT",anchor.features = features, reduction = Anchor.reduction, dims = Dims.anchor,verbose = FALSE)
-    seu_int <- Seurat::IntegrateData(anchorset = sct.anchors,dims = Dims.anchor, normalization.method = "SCT",verbose = FALSE)
+    seu_int <- Seurat::IntegrateData(anchorset = sct.anchors,dims = Dims.anchor, k.weight = K.weight, normalization.method = "SCT",verbose = FALSE)
     seu_int <- Seurat::RunPCA(seu_int, verbose = FALSE)
     seu_int <- Seurat::RunUMAP(seu_int, dims = Dims.umap,return.model =TRUE,verbose = FALSE)
   }else{
