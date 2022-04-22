@@ -52,7 +52,7 @@ MakeSeuObj_FromRawRNAData<-function(RawList=RawList,MtPattern='^MT-',GSE.ID="Tes
   name_RawList<-names(RawList)
   listOut<-sapply(name_RawList,function(x){
     temp_data<-CheckRowName(DataInput=RawList[[x]])
-    MtPattern<-gsub("-",".",MtPattern);MtPattern<-gsub("_",".",MtPattern)
+    MtPattern<-gsub("-",".",MtPattern);MtPattern<-gsub("_",".",MtPattern);MtPattern<-gsub("\\.","\\\\.",MtPattern)
     seu_raw<- Seurat::CreateSeuratObject(counts =temp_data,
                                          project =x,
                                          min.cells = 1,
