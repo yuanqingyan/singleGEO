@@ -17,8 +17,8 @@ MakeSeuObj_FromRawRNAData(
   Scale.factor = 10000,
   Feature.selection.method = "vst",
   Nfeatures = 2000,
+  Npcs = 50,
   Dims = 1:30,
-  Npcs =50,
   Resolution = 0.8,
   Algorithm = 1,
   Do.scale = TRUE,
@@ -50,9 +50,9 @@ MakeSeuObj_FromRawRNAData(
 
 \item{Nfeatures}{The number of top variable features for the FindVariableFeatures function. Default: 2000}
 
-\item{Dims}{The number of top dimensions of reduction to use for the functions of FindNeighbors and RunUMAP. Default: 1:30}
+\item{Npcs}{The number of pc to use for the functions of RunPCA. Default: 50}
 
-\item{Npcs}{The number of pcs to use for the functions of RunPCA. Default: 50}
+\item{Dims}{The number of top dimensions of reduction to use for the functions of FindNeighbors and RunUMAP. Default: 1:30}
 
 \item{Resolution}{The resolution value for FindClusters function. Default: 0.8}
 
