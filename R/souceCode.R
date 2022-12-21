@@ -457,7 +457,7 @@ Seurat_normalization<-function(Seu_obj_input=seu_obj_input,
                                Norm.method=Norm.method,
                                Scale.factor=Scale.factor,
                                Feature.selection.method=Feature.selection.method,
-                               Nfeatures = Nfeatures,Dims = Dims,Do.scale = Do.scale,Do.center = Do.center){
+                               Nfeatures = Nfeatures,Do.scale = Do.scale,Do.center = Do.center){
 
   if(Norm.method %in% c("lognorm","Lognorm","LogNorm","LogNormalize")){
     seu_obj_input <- Seurat::NormalizeData(Seu_obj_input, normalization.method ="LogNormalize", scale.factor = Scale.factor,verbose = FALSE)
@@ -472,8 +472,8 @@ Seurat_normalization<-function(Seu_obj_input=seu_obj_input,
 }
 
 
-Seurat_dimensionReduc<-function(Seu_obj_input=seu_obj_input,Dims = dims,Resolution=Resolution,Algorithm=Algorithm){
-  seu_obj_input <- Seurat::RunPCA(Seu_obj_input,verbose = FALSE)
+Seurat_dimensionReduc<-function(Seu_obj_input=seu_obj_input,npcs =npcs,Dims = dims,Resolution=Resolution,Algorithm=Algorithm){
+  seu_obj_input <- Seurat::RunPCA(Seu_obj_input,npcs =npcs,verbose = FALSE)
   seu_obj_input <- Seurat::FindNeighbors(seu_obj_input, dims = Dims,verbose = FALSE)
   seu_obj_input <- Seurat::FindClusters(seu_obj_input,resolution=Resolution,algorithm = Algorithm,verbose = FALSE)
   seu_obj_input <- Seurat::RunUMAP(seu_obj_input, dims = Dims,verbose = FALSE)

@@ -18,6 +18,7 @@
 #' @param Feature.selection.method The method for the top variable feature selection. This will feed to FindVariableFeatures function. Default: vst
 #' @param Nfeatures The number of top variable features for the FindVariableFeatures function. Default: 2000
 #' @param Dims The number of top dimensions of reduction to use for the functions of FindNeighbors and RunUMAP. Default: 1:30
+#' @param Npcs The number of pc to use for the functions of RunPCA. Default: 50
 #' @param Resolution The resolution value for FindClusters function. Default: 0.8
 #' @param Algorithm The algorithm to be used in FindClusters. Default: 1
 #'
@@ -46,7 +47,7 @@
 MakeSeuObj_FromRawRNAData<-function(RawList=RawList,MtPattern='^MT-',GSE.ID="Test",MinFeature=200,MaxFeature=7500,
                                  MinCount=400, MaxCount=40000,MaxMT=10,
                                  Norm.method = "lognorm", Scale.factor = 10000,
-                                 Feature.selection.method = "vst", Nfeatures = 2000,Dims = 1:30,
+                                 Feature.selection.method = "vst", Nfeatures = 2000,Npcs =50,Dims = 1:30,
                                  Resolution=0.8,Algorithm=1,
                                  Do.scale = TRUE,Do.center = TRUE){
   name_RawList<-names(RawList)
@@ -72,11 +73,11 @@ MakeSeuObj_FromRawRNAData<-function(RawList=RawList,MtPattern='^MT-',GSE.ID="Tes
                                    Scale.factor=Scale.factor,
                                    Feature.selection.method=Feature.selection.method,
                                    Nfeatures = Nfeatures,
-                                   Dims = Dims,
                                    Do.scale = Do.scale,
                                    Do.center = Do.center)
 
     seu_sub <-Seurat_dimensionReduc(Seu_obj_input=seu_sub,
+                                    npcs =Npcs,
                                     Dims = Dims,
                                     Resolution=Resolution,
                                     Algorithm=Algorithm)
