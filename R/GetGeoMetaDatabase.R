@@ -27,7 +27,8 @@ GetGeoMetaDatabase<-function(Sqlfile=NULL,Demo=FALSE){
       GEOSqlfile<- "GEOmetadb.sqlite"
     }else{
       print("Downloading metadb from GEO")
-      GEOSqlfile<- GEOmetadb::getSQLiteFile()
+      #GEOSqlfile<- GEOmetadb::getSQLiteFile()
+      GEOSqlfile<- singleGEOgetSQLiteFile()
     }
     GeoDataBase<-RSQLite::dbConnect(RSQLite::SQLite(), GEOSqlfile)
   }
