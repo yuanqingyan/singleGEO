@@ -1,0 +1,154 @@
+## ----include = FALSE----------------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE, 
+  message = FALSE,
+  comment = "#>",
+  fig.width=6, 
+  fig.height=6,
+  fig.align = "center",
+  echo=TRUE
+)
+
+## ----eval=FALSE---------------------------------------------------------------
+#  library(devtools)
+#  devtools::install_github("yuanqingyan/singleGEO")
+
+## ----eval=TRUE----------------------------------------------------------------
+library(singleGEO)
+##Download the GEO meta database. Remove "Demo=TRUE" or set "Demo=FALSE" when you start your own project.
+MyDataBase<-GetGeoMetaDatabase(Sqlfile=NULL,Demo=TRUE)
+
+## ----eval=TRUE----------------------------------------------------------------
+# Will study mouse and human data
+MyOrganism<-c("Mus musculus","Homo sapiens")
+# Will study lung. Some study may use "pulmonary" instead of "lung", so two options are specified
+search_kw1<-c("lung","pulmonary")
+KeyList<-list(kw1=search_kw1)
+MySearch<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                           Organism=MyOrganism, 
+                           InputSearchList=KeyList)
+colnames(MySearch)
+unique(MySearch$gse)
+
+## ----eval=FALSE---------------------------------------------------------------
+#  head(MySearch[,c("title","gse")])
+
+## ----eval=TRUE,echo=FALSE-----------------------------------------------------
+head(MySearch[,c("title","gse")])
+
+## ----eval=FALSE---------------------------------------------------------------
+#  MySearch[MySearch$gse=="GSE158127","summary"][1]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch[MySearch$gse=="GSE158127","summary"][1]
+
+## ----eval=TRUE----------------------------------------------------------------
+Organism_hs<-c("Homo sapiens")
+Data_platform<-c("scRNAseq","scATACseq")
+search_kw_ade<-c("adenocarcinoma")
+KeyList_ade<-list(kw_ad=search_kw_ade)
+MySearch_ade<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                               Organism=Organism_hs,
+                               InputSearchList=KeyList_ade,
+                               Platform=Data_platform)
+unique(MySearch_ade$gse)
+
+## ----eval=FALSE---------------------------------------------------------------
+#  MySearch_ade[MySearch_ade$gse=="GSE142285","title"][1]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch_ade[MySearch_ade$gse=="GSE142285","title"][1]
+
+## ----eval=TRUE----------------------------------------------------------------
+MyOrganism_ms<-c("Mus musculus")
+search_brain<-c("brain")
+KeyList_brain<-list(kw_brain=search_brain)
+
+MySearch_brain_scRNA<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                                       Organism=MyOrganism_ms,
+                                       InputSearchList=KeyList_brain,
+                                       Platform="scRNAseq")
+MySearch_brain_scATAC<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                                        Organism=MyOrganism_ms,
+                                        InputSearchList=KeyList_brain,
+                                        Platform="scATACseq")
+(Both_RNA_ATAC<-intersect(unique(MySearch_brain_scRNA$gse),
+                          unique(MySearch_brain_scATAC$gse)))
+
+## ----eval=FALSE---------------------------------------------------------------
+#  MySearch_brain_scRNA[MySearch_brain_scRNA$gse==Both_RNA_ATAC[1],"overall_design"][1]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch_brain_scRNA[MySearch_brain_scRNA$gse==Both_RNA_ATAC[1],"overall_design"][1]
+
+## ----eval=TRUE----------------------------------------------------------------
+search_kw2<-c("fibrosis")
+search_kw3<-c("new","novel")
+search_kw4<-c("subtype","subpopulation")
+KeyList_new<-list(kw1=search_kw1,
+                  kw2=search_kw2,
+                  kw3=search_kw3,
+                  kw4=search_kw4)
+MySearch_new<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                               Organism=MyOrganism_ms,
+                               InputSearchList=KeyList_new)
+unique(MySearch_new$gse)
+
+## ----eval=FALSE---------------------------------------------------------------
+#  MySearch_new[1,"title"]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch_new[1,"title"]
+
+## ----eval=FALSE---------------------------------------------------------------
+#  MySearch_new$summary[1]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch_new$summary[1]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch_new$overall_design[1]
+
+## ----eval=TRUE,echo=T---------------------------------------------------------
+gsm_info<-Get_GSMFromGSE(GeoDataBase=MyDataBase,
+                         GSE.ID=MySearch_new$gse[1])
+colnames(gsm_info)
+
+## ----eval=FALSE---------------------------------------------------------------
+#  gsm_info[,c("title","gsm")]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+gsm_info[,c("title","gsm")]
+
+## ----eval=TRUE----------------------------------------------------------------
+search_kw5<-c("fas-signaling","fas signaling","fas pathway","fas-pathway")
+KeyList_fas<-list(kw1=search_kw1,
+                  kw2=search_kw2,
+                  kw5=search_kw5)
+MySearch_fas<-Get_Keyword_Meta(GeoDataBase=MyDataBase,
+                               Organism=MyOrganism_ms,
+                               InputSearchList=KeyList_fas)
+unique(MySearch_fas$gse)
+
+## ----eval=FALSE---------------------------------------------------------------
+#  MySearch_fas[1,"title"]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch_fas[1,"title"]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch_fas$overall_design[1]
+
+## ----eval=FALSE---------------------------------------------------------------
+#  MySearch_fas$summary[1]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch_fas$summary[1]
+
+## ----eval=FALSE---------------------------------------------------------------
+#  MySearch_fas$supplementary_file[1]
+
+## ----eval=TRUE,echo=F---------------------------------------------------------
+MySearch_fas$supplementary_file[1]
+

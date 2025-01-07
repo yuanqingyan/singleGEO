@@ -265,7 +265,7 @@ names(seu_GSE134174_sct)
 ```
 
 ## Data integration
-Multiple datasets can be integrated for the analysis. These datasets could be obtained from one single GSE ID or multiple GSE IDs. The following examples illustrate the integrative analysis of example datasets from one single GSE ID (GSE134174). For datasets from different studies, please double-check the potential technical discrepancy. For example, different studies can use different genomic build which will lead to gene symbol difference.
+Multiple datasets can be integrated for the analysis. These datasets could be obtained from one single GSE ID or multiple GSE IDs. The following examples illustrate the integrative analysis of example datasets from one single GSE ID (GSE134174). For datasets from different studies, please double-check the potential technical discrepancy. For example, different studies can use different genomic build which will result in gene symbol difference.
 ```{r,eval=TRUE}
 Int_GSE134174<-SeuObj_integration(Object.list=seu_GSE134174)
 ###Add additional meta data
@@ -281,7 +281,7 @@ Int_GSE134174_sct<-Seurat::AddMetaData(object=Int_GSE134174_sct,metadata =as.dat
 Seurat::DimPlot(Int_GSE134174_sct,group.by="cluster_ident",label=TRUE,repel = TRUE)+ NoLegend()
 ```
 
-Integrative analysis of datasets from multiple GSE IDs could be powerful to gain additional information. As previous query result, GSE104154 dataset studies the mouse pulmonary fibrotic mesenchymal cells and the authors identify a new subtype of cells (Pdgfrb_hi) in fibrotic stage(Xie,T. (2018)). Another dataset, GSE161648, studies the impact of homeostatic fibrosis when the fas signaling was lost in fibroblasts(Redente, EF. (2020)). Integrative analysis of these two scRNAseq datasets could be useful to help us understand how the new subtype of cells found from GSE104154 will be affected by fas signaling. For demonstration purpose, we assume that these two datasets using the same genomic build and having the same gene symbol for the same gene. 
+Integrative analysis of datasets from multiple GSE IDs could be powerful to gain additional information. As previous query result, GSE104154 dataset studies the mouse pulmonary fibrotic mesenchymal cells and the authors identify a new subtype of cells (Pdgfrb_hi) in fibrotic stage(Xie,T. (2018)). Another dataset, GSE161648, studies the impact of homeostatic fibrosis when the fas signaling was lost in fibroblasts(Redente, EF. (2020)). Integrative analysis of these two scRNAseq datasets can help us understand how the new subtype of cells found from GSE104154 will be affected by fas signaling.
 
 ```{r,eval=TRUE,fig.height = 4, fig.width = 8, fig.align = "center"}
 # ##The codes were used to generate the example data list of GSE104154 (only a small subset of the data were used)
