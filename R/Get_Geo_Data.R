@@ -17,15 +17,19 @@
 
 
 Get_Geo_Data<-function(DownGSEID=DownGSEID,DecompressFile=FALSE,DecompressType="All"){
-  AlreadyFile<-CheckFolderExist(checkList=DownGSEID)
-  if(length(AlreadyFile)>0){
-    removeFolder(ToBeRemove=AlreadyFile)
-  }
+  sapply(DownGSEID,function(iGSEID){
+    # AlreadyFile<-CheckFolderExist(checkList=iGSEID)
+    # if(length(AlreadyFile)>0){
+    #   removeFolder(ToBeRemove=AlreadyFile)
+    # }
 
-  downloadSupplFile(downGSEList=DownGSEID)
-  if(DecompressFile){
-    ExtractFile(ExtractID=DownGSEID,DecompressType=DecompressType)
-  }
+    downloadGSESupplFile(GSEID=iGSEID,destfolder=getwd())
+
+    if(DecompressFile){
+      ExtractFile(ExtractID=iGSEID,DecompressType=DecompressType)
+    }
+  })
+
 
   ListOfAllFile<-NULL
 

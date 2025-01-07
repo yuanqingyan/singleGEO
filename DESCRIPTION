@@ -1,12 +1,12 @@
 Package: singleGEO
 Type: Package
-Title: Query and Integrative Analysis of High-throughput Single Cell Sequencing Data from GEO
-Version: 0.1.0
-Date: 2021-11-29
+Title: Query and Analysis of High-throughput Single Cell Sequencing Data from GEO
+Version: 0.1.1
+Date: 2025-1-6
 Author: Yuanqing Yan
 Maintainer: Yuanqing Yan <bioinformatics.yuanqing@gmail.com>
 Description: Query and download single cell sequencing data from GEO, and perform an integrative analysis. 
-Depends: R (>= 4.1.0),R.utils,Matrix,RSQLite,Seurat,SeuratObject,GEOmetadb,GEOquery,devtools,knitr,sctransform,ggplot2,glmGamPoi
+Depends: R (>= 4.4.0),R.utils(v2.12.3),Matrix,RSQLite(2.3.9),Seurat(5.1.0),SeuratObject(5.0.2),GEOmetadb(1.66.0),GEOquery(2.72.0),devtools,knitr,sctransform,ggplot2,glmGamPoi
 License: GPL-2
 Encoding: UTF-8
 LazyData: false

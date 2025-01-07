@@ -26,7 +26,8 @@ GetGeoMetaDatabase<-function(Sqlfile=NULL,Demo=FALSE){
       print("Using GEO meta database within current folder")
       GEOSqlfile<- "GEOmetadb.sqlite"
     }else{
-      print("Downloading metadb from GEO")
+      file.remove("GEOmetadb.sqlite.gz")
+      print("Downloading metadb from GEO....")
       #GEOSqlfile<- GEOmetadb::getSQLiteFile()
       GEOSqlfile<- singleGEOgetSQLiteFile()
     }

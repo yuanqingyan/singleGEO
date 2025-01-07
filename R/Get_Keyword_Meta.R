@@ -31,16 +31,19 @@ Get_Keyword_Meta<-function(GeoDataBase=GeoDataBase,
 
   print("Database searching")
   ##step 1## filter out organism; obtain gsm#####
+  print("---Step1: Filter organism")
   CM_Obtain_GSM<-sprintf("SELECT gsm FROM gsm WHERE %s",get_organism)
   Obtain_GSM<-RSQLite::dbGetQuery(GeoDataBase,CM_Obtain_GSM)
   Input_gsm<-paste(sapply(Obtain_GSM$gsm,function(x) sprintf("'%s'",x)),collapse=",")
   ##step 2## obtain unique gse#####
+  print("---Step2: Obtain unique GSE")
   CM_Obtain_GSE_FromGSM<-sprintf("SELECT gse FROM gse_gsm WHERE gsm IN (%s)",Input_gsm)
   Obtain_GSE_FromGSM<-RSQLite::dbGetQuery(GeoDataBase,CM_Obtain_GSE_FromGSM)
   Input_gse<-paste(sapply(unique(Obtain_GSE_FromGSM$gse),function(x) sprintf("'%s'",x)),collapse=",")
 
   Unique_GSE_FromGSm_OrganismFilter<-sprintf("(gse IN (%s))",Input_gse)
   ##step 3## Final step to obtain gse information#####
+  print('---Step3: Obtain GSE Info')
   CM_Obtain_GSE_FromGSE<-sprintf("SELECT %s FROM gse WHERE %s AND %s AND %s",select_OutGSES_item(), Unique_GSE_FromGSm_OrganismFilter,get_scPlatform,get_userKW)
   res_query<-RSQLite::dbGetQuery(GeoDataBase,CM_Obtain_GSE_FromGSE)
   return(res_query)

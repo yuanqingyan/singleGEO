@@ -10,7 +10,7 @@ vignette: >
 ---
 
 ## Description
-Single cell next generation sequencing technologies have advanced the research to examine the genomic alterations from individual cells. Single cell Assay for Transposase Accessible Chromatin with high-throughput sequencing (scATAC-seq) enables the research of chromatin-accessibility signatures across the entire genome. Single cell RNAseq (scRNAseq) studies the single-cell transcriptomics to better understand the differential cell compositions as wells as the molecular profile changes. Currently a huge amount of single cell genetic data have been deposited in GEO and the number is keeping on exponentially increasing. These single cell high-throughput sequencing data come from different tissues, health status, disease stage and drug treatments. Various machine learning algorithms, such as canonical correlation analysis and reciprocal principal component analysis, have been adapted in single cell data analysis. The implementation of such algorithms correct the potential batch effects and make the data integration between different datasets feasible. SingleGEO is developed to efficiently query, download high-throughput single cell sequencing data from GEO and perform and integrative analysis. The program will initially download GEO meta database into local drive and implement a fast and light-weight searching engine to query the database. By feeding the program with the keywords relevant to the user's research interests, the query results with specific meta information will be returned for further investigation. Once the targeted GSE IDs have been selected, the single cell sequencing data deposited in GEO supplement can be downloaded into local derive. In addition, singleGEO provides pipelines to easily generate Seurat objects from raw/normalized data and perform an integrative analysis with multiple datasets using Seurat framework. Novel findings can be obtained through the integrative analysis from different datasets. 
+Single cell sequencing technologies have advanced the research to examine the genomic alterations from individual cells. Currently a huge amount of single cell genetic data have been deposited in GEO and the number is keeping on exponentially increasing. These single cell high-throughput sequencing data come from different tissues, health status, disease stage and drug treatments. Various machine learning algorithms, such as canonical correlation analysis and reciprocal principal component analysis, have been adapted in single cell data analysis. The implementation of such algorithms correct the potential batch effects and make the data integration between different datasets feasible. SingleGEO is developed to efficiently query, download high-throughput single cell sequencing data from GEO for further integrative analysis. The program will initially download GEO meta database into local drive and implement a fast and light-weight searching engine to query the database. By feeding the program with the keywords relevant to the user's research interests, the query results with specific meta information will be returned for further investigation. Once the targeted GSE IDs have been selected, the single cell sequencing data deposited in GEO supplement can be downloaded into local derive. 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -220,7 +220,7 @@ DownloadFileInfo
 ExtractFile(ExtractID=myGeoID,DecompressType=c("tar","gz"))
 list.files("GSE140032")
 ```
-Different groups have different preference in storing and uploading the data to GEO. If a Seurat object is provided by the submitter, the data can be read into Seurat directly for further analysis. For hdf5 format file, R packages of "rhdf5" and/or "SeuratDisk" could be helpful for data access. For the study with only raw count data and/or normalized data provided, SingleGEO provides "MakeSeuObj_FromRawRNAData" and "MakeSeuObj_FromNormalizedRNAData" to quickly make the Seurat object.
+Different groups have different preference in storing and uploading the data to GEO. If a Seurat object is provided by the submitter, the data can be read into Seurat directly for further analysis. For hdf5 format file, R packages of "rhdf5" and/or "SeuratDisk" could be helpful for data access. For the study with only raw count data and/or normalized data provided, SingleGEO provides "MakeSeuObj_FromRawRNAData" to quickly make the Seurat object.
 
 ## Make Seurat object from raw sequencing data
 SingleGEO can make the Seurat object from the raw data it downloaded by running "MakeSeuObj_FromRawRNAData". Before running "MakeSeuObj_FromRawRNAData", a list of raw data should be constructed. Each element of the list is for each individual sample and the name of the element corresponds to the name of the sample. "MakeSeuObj_FromRawRNAData" performs the scRNAseq data quality control by filtering out cells with potential doublets, dead cells or empty droplets. If all cells want to be kept or the cells have been filtered, set a big number of maxFeature,maxCount,maxMT and small number of minFeature,minCount. SingleGEO also conducts dimension reduction and makes the Seurat object for the downstream analysis.
@@ -264,25 +264,8 @@ seu_GSE134174_sct<-MakeSeuObj_FromRawRNAData(RawList=list_GSE134174,
 names(seu_GSE134174_sct)
 ```
 
-## Make Seurat object from normalized data
-Normalized scRNAseq data could be available and may be the only dataset provided by the data submitter. SingleGEO can use normalized dataset to make the Seurat object. For the normalized data, assume the cells are in good quality and no further filtering is necessary.
-
-```{r,eval=TRUE}
-#####to make Seurat object from normalized by LogNormalized method
-#Norm_GSE134174<-lapply(seu_GSE134174,function(x) {Seurat::GetAssayData(x,slot = "data")})
-data(Norm_GSE134174)
-seu_Norm_GSE134174<-MakeSeuObj_FromNormalizedRNAData(NormList=Norm_GSE134174,GSE.ID="GSE134174")
-Seurat::DimPlot(seu_Norm_GSE134174[[1]],repel = TRUE)
-
-#####to make Seurat object from normalized by sctransform method
-list_Norm.sct_GSE134174<-lapply(seu_GSE134174_sct,function(x) Seurat::GetAssayData(x,slot="data"))
-seu_Norm.sct_GSE134174<-MakeSeuObj_FromNormalizedRNAData(NormList=list_Norm.sct_GSE134174,Frow.which.Norm="sct",GSE.ID="GSE134174")
-Seurat::DimPlot(seu_Norm.sct_GSE134174[[1]],repel = TRUE)
-
-```
-
 ## Data integration
-Multiple datasets can be integrated for the analysis. These datasets could be obtained from one single GSE ID or multiple GSE IDs. The following examples illustrate the integrative analysis of example datasets from one single GSE ID (GSE134174).
+Multiple datasets can be integrated for the analysis. These datasets could be obtained from one single GSE ID or multiple GSE IDs. The following examples illustrate the integrative analysis of example datasets from one single GSE ID (GSE134174). For datasets from different studies, please double-check the potential technical discrepancy. For example, different studies can use different genomic build which will result in gene symbol difference.
 ```{r,eval=TRUE}
 Int_GSE134174<-SeuObj_integration(Object.list=seu_GSE134174)
 ###Add additional meta data
@@ -383,14 +366,14 @@ Integrative analysis of datasets from multiple GSE IDs could be powerful to gain
   Subset_GSE161648FromInt<-subset(Int_GSE54_GSE48,GSE=="GSE161648")
   Subset_GSE161648FromInt$FasStatus<-ifelse(Subset_GSE161648FromInt$ID %in% c("GSM4911963_sixwkfasdel","GSM4911965_threewkfasdel"),"Loss","NoLoss")
   tab_dat<-as.matrix(as.data.frame(unclass(table(Subset_GSE161648FromInt@meta.data[,c("FasStatus","defined")]))))
-  ###PDGFrb is located in the cluster of 10. No obvious different is observed and loss of Fas signaling probably won't affect PDGFrb cell fraction.
+  ###PDGFrb is located in the cluster of 6. No obvious different is observed and loss of Fas signaling probably won't affect PDGFrb cell fraction.
   (tab_pop<-prop.table(tab_dat, margin = 1))
   dat_barplot<-data.frame(FasStatus=rep(c("Loss","NoLoss"),ncol(tab_pop)),
                         defined=rep(colnames(tab_pop),each=2),
                         Percentage=as.numeric(tab_pop))
 ```
 ```{r,eval=TRUE,fig.align = "center"}
-  ###Barplot. Note that PDGFrb is located in the cluster of 7.
+  ###Barplot. Note that PDGFrb is located in the cluster of 6.
   pl<-ggplot2::ggplot(dat_barplot, aes(fill=defined, y=Percentage, x=FasStatus))+
     geom_bar(position="stack", stat="identity") + 
     theme_bw()

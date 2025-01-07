@@ -379,11 +379,40 @@ Obtain_GSM_fromGSE<-function(Gseid=Gseid,db=db){
   return(GsmOut)
 }
 
-downloadSupplFile<-function(downGSEList=downGSEList){
-  sapply(downGSEList,function(x){
-    GEOquery::getGEOSuppFiles(x)
-    })
+# downloadSupplFile<-function(downGSEList=downGSEList){
+#   sapply(downGSEList,function(x){
+#     GEOquery::getGEOSuppFiles(x)
+#     })
+# }
+
+downloadGSESupplFile<-function(GSEID=GSEID,destfolder=destfolder){
+  stub = gsub("\\d{1,3}$", "nnn", GSEID, perl = TRUE)
+  targetURL<-sprintf("ftp://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/suppl/",stub,GSEID)
+  # Open a connection to the FTP URL
+  conn <- curl(targetURL)
+  file_list <- readLines(conn)
+  close(conn)
+
+  file_names <- sapply(file_list, function(line) {
+    parts <- strsplit(line, "\\s+")[[1]]  # Split by whitespace
+    return(as.character(parts[length(parts)]))                      # Get the last element
+  })
+
+  #######
+  downloadFolder=sprintf("%s/%s",destfolder,GSEID)
+
+  if (!dir.exists(downloadFolder)) {
+    dir.create(downloadFolder, recursive = TRUE)  # 'recursive' allows creating parent directories if necessary
+  } else {
+    cat("Directory already exists:", downloadFolder, "\n")
+  }
+
+  lapply(file_names,function(iSample){
+    downloadFile<-sprintf("%s/%s",targetURL,iSample)
+    download.file(downloadFile, destfile = sprintf("%s/%s",downloadFolder,iSample), method = "curl")
+  })
 }
+
 
 isEmptyFile<-function(inputString){
   isEmptyF<-ifelse(length(inputString)==0,TRUE,FALSE)
@@ -440,12 +469,13 @@ CheckRowName<-function(DataInput=DataInput){
 
 CheckFolderExist<-function(checkList=checkList){
   currentFile<-list.files()
-  NewCheckList<-checkList
-  if(sum(checkList %in% currentFile)>0){
-    NewCheckList<-checkList[!checkList %in% currentFile]
-    InCheckList<-checkList[checkList %in% currentFile]
-  #  print(sprintf("%s already exist!",InCheckList))
-  }
+  # NewCheckList<-checkList
+  # if(sum(checkList %in% currentFile)>0){
+  #   NewCheckList<-checkList[!checkList %in% currentFile]
+  #   InCheckList<-checkList[checkList %in% currentFile]
+  # #  print(sprintf("%s already exist!",InCheckList))
+  # }
+  NewCheckList<-checkList[checkList %in% currentFile]
   return(NewCheckList)
 }
 
